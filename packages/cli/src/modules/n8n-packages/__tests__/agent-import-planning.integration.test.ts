@@ -38,7 +38,7 @@ import { LicenseMocker } from '@test-integration/license';
 import { importPackageRequest } from './fixtures/import-request';
 import { ImportOrchestrator, type ImportOrchestrationInput } from '../engine/import-orchestrator';
 import type { PreparedAgent } from '../entities/agent/agent-import.types';
-import type { WorkflowConflictPolicy, WorkflowPublishingPolicy } from '../n8n-packages.types';
+import type { ImportConflictPolicy, WorkflowPublishingPolicy } from '../n8n-packages.types';
 
 const license = new LicenseMocker();
 mockInstance(ActiveWorkflowManager);
@@ -94,7 +94,7 @@ function input(sources: PreparedAgent[], projectId = project.id): ImportOrchestr
 	const request = importPackageRequest({
 		user,
 		packageBuffer: Buffer.alloc(0),
-		workflowConflictPolicy: 'new-version',
+		conflictPolicy: 'new-version',
 	});
 	return {
 		context: { user, projectId, folderId: null },
@@ -237,7 +237,7 @@ it('plans cycles, typed bindings and task IDs without changing definitions or de
 	expect(await records()).toEqual(before);
 });
 
-it.each<WorkflowConflictPolicy>(['new-version', 'skip', 'fail'])(
+it.each<ImportConflictPolicy>(['new-version', 'skip', 'fail'])(
 	'applies %s without resolving unused skipped definitions',
 	async (policy) => {
 		const existing = await agents.save({
@@ -248,14 +248,16 @@ it.each<WorkflowConflictPolicy>(['new-version', 'skip', 'fail'])(
 		const source = agent('source');
 		if (policy === 'skip') source.config!.credential = 'unavailable';
 		const request = input([source]);
-		request.options.workflowConflictPolicy = policy;
+		request.options.conflictPolicy = policy;
 		request.credentialRequest.requirements = [
 			{ id: 'unavailable', usedBy: [{ kind: 'agent', id: 'source' }] },
 		];
 		if (policy !== 'skip') request.credentialRequest.requirements = [];
 		else {
 			const member = await createMember();
-			const role = await createCustomRoleWithScopeSlugs(['agent:read'], { roleType: 'project' });
+			const role = await createCustomRoleWithScopeSlugs(['agent:import', 'agent:read'], {
+				roleType: 'project',
+			});
 			await linkUserToProject(member, project, role.slug);
 			request.context.user = member;
 			source.tasks.task_unused = {
@@ -289,7 +291,7 @@ it.each<WorkflowConflictPolicy>(['new-version', 'skip', 'fail'])(
 			expect(plan.credentialPlan.stubIds.size).toBe(0);
 			if (policy === 'skip') {
 				expect(plan.agentPlan!.items[0].tasks).toEqual(source.tasks);
-				await planner.assertNotBlocked([plan], { apiKeyScopes: ['agent:read'] });
+				await planner.assertNotBlocked([plan], { apiKeyScopes: ['agent:import', 'agent:read'] });
 			}
 		}
 	},
@@ -459,7 +461,7 @@ it.each<WorkflowConflictPolicy>(['new-version', 'skip'])(
 		const requests = [input([agent('first')]), input([agent('second')], otherProject.id)];
 		requests[0].options.workflowConflictPolicy = policy;
 		for (const request of requests) {
-			request.options.workflowIdPolicy = 'source';
+			request.options.agentIdPolicy = 'source';
 			request.agents![0].tasks.task_shared = {
 				name: 'Summary',
 				objective: 'Summarize.',
@@ -540,11 +542,12 @@ it.each(['skills', 'self-reference'] as const)(
 );
 
 it.each(['create', 'update', 'publish', 'unpublish'] as const)(
-	'requires the %s action scope in addition to read and workflow import',
+	'requires the %s action scope in addition to read and Agent import',
 	async (action) => {
 		const member = await createMember();
 		const required = `agent:${action}`;
 		const scopes = [
+			'agent:import',
 			'agent:read',
 			'workflow:import',
 			'agent:create',
@@ -583,7 +586,7 @@ it.each(['create', 'update', 'publish', 'unpublish'] as const)(
 			publish: 'publish-all',
 			unpublish: 'unpublish-all',
 		};
-		request.options.workflowPublishingPolicy = policies[action];
+		request.options.agentPublishingPolicy = policies[action];
 		const before = await records();
 		await expect(planner.plan(request)).rejects.toBeInstanceOf(ForbiddenError);
 		const permittedRole = await createCustomRoleWithScopeSlugs(scopes, { roleType: 'project' });
@@ -606,10 +609,12 @@ it('plans an authorized pending project without creating its shell and still che
 	const plan = await planner.plan(request);
 	expect(plan.blockingIssues).toEqual([]);
 	await expect(
-		planner.assertNotBlocked([plan], { apiKeyScopes: ['agent:read'] }),
+		planner.assertNotBlocked([plan], { apiKeyScopes: ['agent:import', 'agent:read'] }),
 	).rejects.toBeInstanceOf(ForbiddenError);
 	await expect(
-		planner.assertNotBlocked([plan], { apiKeyScopes: ['agent:read', 'agent:create'] }),
+		planner.assertNotBlocked([plan], {
+			apiKeyScopes: ['agent:import', 'agent:read', 'agent:create'],
+		}),
 	).resolves.toBeUndefined();
 	expect(await records()).toEqual(before);
 });

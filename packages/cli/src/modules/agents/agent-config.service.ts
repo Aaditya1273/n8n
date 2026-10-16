@@ -59,7 +59,6 @@ export class AgentConfigService {
 		private readonly agentRepository: AgentRepository,
 		private readonly agentTaskRepository: AgentTaskRepository,
 		private readonly configPreparation: AgentConfigPreparationService,
-		private readonly agentPolicyService: AgentPolicyService,
 		private readonly setupCompletionService: AgentSetupCompletionService,
 		private readonly transactionRunner: TransactionRunner,
 		private readonly saveCompletion: AgentSaveCompletionService,
@@ -120,7 +119,7 @@ export class AgentConfigService {
 		const previousSkills = await this.agentSkillRefs.readDraft(agent, {});
 		const previousConfig = composeJsonConfig(agent, previousSkills.skillRefs);
 		const previousIntegrations = agent.integrations ?? [];
-		await this.agentPolicyService.enforceSave(
+		await Container.get(AgentPolicyService).enforceSave(
 			projectId,
 			agentId,
 			content.config ?? { name: content.name },

@@ -793,6 +793,7 @@ export {
 	type PromotionEnvironmentSummary,
 } from './promotions/promotion-environment.dto';
 export {
+	ApplyCheckQueryDto,
 	ApplyPackageDto,
 	ApplyPackageResultDto,
 	ApplySelectionDto,
@@ -805,6 +806,7 @@ export {
 	promotePackageCountsSchema,
 	promotePackageResultSchema,
 	promotionGitResultSchema,
+	type ApplyCheckResult,
 } from './promotions/promotion-operations.dto';
 export {
 	parsePromotionRunDetails,

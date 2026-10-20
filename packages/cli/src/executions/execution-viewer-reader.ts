@@ -9,9 +9,7 @@ import { ExecutionPersistence } from '@/executions/execution-persistence';
  * executions API redacts it: the workflow redaction policy, dynamic
  * credentials, and credentials the viewer cannot use.
  *
- * This is the only place the Assistant may read execution data from. The
- * extractors take the loaded execution, so they cannot read raw data. The
- * caller checks that the viewer can read the workflow first.
+ * The caller checks that the viewer can read the workflow first.
  */
 export async function loadExecutionForViewer(
 	executionId: string,

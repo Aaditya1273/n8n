@@ -33,6 +33,16 @@ column.
 
 Reduce the editor column side padding when the column is narrow.
 
+## Builder side panel widths
+
+Start the Assistant and Preview panels at 30% of the builder container width.
+Limit this default to 320–720 pixels. Use 480 pixels before measurement.
+Keep saved Assistant widths and user resize choices. Double-click a resize
+handle to reset its panel to the current default.
+Reserve 480 pixels for the editor. When both panels are open, share the
+remaining width in proportion to each panel's requested extra width above
+320 pixels. Do not save automatic layout adjustments as user resize choices.
+
 ## Preview history
 
 Use the shared `ChatHistoryDropdownTrigger` in the Preview dock and the Assistant.
@@ -105,14 +115,14 @@ design work.
 
 ### Layout contract
 
-| Area       | Rule                                                                                                                         |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Width      | Use `2xlarge` by default. Keep one width for all steps.                                                                      |
-| Header     | Do not add a bottom divider. Put Back on the left and Close on the right.                                                     |
-| Title      | Use an editable local name when the asset supports one. Show the asset icon beside the name in tool configuration modals.    |
+| Area       | Rule                                                                                                                                                                                                                                                                                |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Width      | Use `2xlarge` by default. Keep one width for all steps.                                                                                                                                                                                                                             |
+| Header     | Do not add a bottom divider. Put Back on the left and Close on the right.                                                                                                                                                                                                           |
+| Title      | Use an editable local name when the asset supports one. Show the asset icon beside the name in tool configuration modals.                                                                                                                                                           |
 | Body       | Let `AgentModal` own the outer body inset. Do not repeat it on the first content wrapper. Focus the first body field. If there is no body control, use the dialog's default focus. Keep the title out of the initial focus order. Scroll the body only. Keep its scrollbar visible. |
-| Footer     | Keep the footer's top divider. Put ghost Remove on the left. Put Cancel before the primary action on the right.               |
-| Responsive | Support 375 by 667 pixels. Stack footer actions when necessary.                                                              |
+| Footer     | Keep the footer's top divider. Put ghost Remove on the left. Put Cancel before the primary action on the right.                                                                                                                                                                     |
+| Responsive | Support 375 by 667 pixels. Stack footer actions when necessary.                                                                                                                                                                                                                     |
 
 Use CSS variables for all sizes, spacing, colors, and motion. Do not add a new
 global dialog primitive.

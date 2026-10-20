@@ -4140,31 +4140,55 @@ describe('AgentBuilderView — three-column shell', () => {
 		expect(localStorage.getItem('N8N_AGENT_AI_PANEL_WIDTH')).toBe('680');
 	});
 
-	it('resets the preview to the current responsive default', async () => {
+	it('restores responsive preview widths on reset and preserves subsequent user resizing', async () => {
 		localStorage.setItem('N8N_AGENT_PREVIEW_OPEN:p1:a1', 'true');
 		const wrapper = await renderView();
 		const vm = wrapper.vm as unknown as {
 			builderContainerWidth: number;
-			onPreviewDockResize: (data: { width: number }) => void;
 		};
 		vm.builderContainerWidth = 1600;
-		vm.onPreviewDockResize({ width: 640 });
 		await nextTick();
 		const resizer = wrapper
 			.findAllComponents({ name: 'ResizeWrapper' })
-			.find((component) => component.props('supportedDirections').includes('left'));
-		expect(resizer?.props('width')).toBe(640);
-		expect(resizer?.classes()).toContain('previewResizeWrapper');
-		expect(resizer?.classes()).toContain('previewResizeOpen');
-		await resizer?.get('[data-dir="left"]').trigger('mousedown');
+			.find((component) => component.props('supportedDirections').includes('left'))!;
+		const displayedWidth = vi.spyOn(resizer.element, 'offsetWidth', 'get').mockReturnValue(480);
+		await resizer.get('[data-dir="left"]').trigger('mousedown', { clientX: 480 });
+		window.dispatchEvent(new MouseEvent('mousemove', { clientX: 320 }));
 		window.dispatchEvent(new MouseEvent('mouseup'));
 		await nextTick();
-		await resizer?.get('[data-dir="left"]').trigger('mousedown');
+		expect(resizer.props('width')).toBe(640);
+		vm.builderContainerWidth = 2000;
+		await nextTick();
+		expect(resizer.props('width')).toBe(640);
+		vm.builderContainerWidth = 1600;
+		await nextTick();
+		expect(resizer.classes()).toContain('previewResizeWrapper');
+		expect(resizer.classes()).toContain('previewResizeOpen');
+		await resizer.get('[data-dir="left"]').trigger('mousedown');
 		window.dispatchEvent(new MouseEvent('mouseup'));
 		await nextTick();
-		await resizer?.get('[data-dir="left"]').trigger('dblclick');
+		await resizer.get('[data-dir="left"]').trigger('mousedown');
+		window.dispatchEvent(new MouseEvent('mouseup'));
+		await nextTick();
+		await resizer.get('[data-dir="left"]').trigger('dblclick');
 		await flushPromises();
-		expect(resizer?.props('width')).toBe(480);
+		expect(resizer.props('width')).toBe(480);
+		vm.builderContainerWidth = 2000;
+		await nextTick();
+		expect(resizer.props('width')).toBe(600);
+		vm.builderContainerWidth = 1200;
+		await nextTick();
+		expect(resizer.props('width')).toBe(360);
+
+		displayedWidth.mockReturnValue(360);
+		await resizer.get('[data-dir="left"]').trigger('mousedown', { clientX: 360 });
+		window.dispatchEvent(new MouseEvent('mousemove', { clientX: 160 }));
+		window.dispatchEvent(new MouseEvent('mouseup'));
+		await nextTick();
+		expect(resizer.props('width')).toBe(560);
+		vm.builderContainerWidth = 2000;
+		await nextTick();
+		expect(resizer.props('width')).toBe(560);
 		expect(localStorage.getItem('N8N_AGENT_AI_PANEL_WIDTH')).toBeNull();
 	});
 

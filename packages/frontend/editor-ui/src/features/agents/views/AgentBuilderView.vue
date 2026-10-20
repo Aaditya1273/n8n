@@ -325,12 +325,7 @@ const previewOpenStorageKey = computed(function getPreviewOpenStorageKey() {
 });
 const persistedPreviewOpen = useStorage(previewOpenStorageKey, false);
 const resizedPreviewDockWidth = ref<number>();
-const previewDockWidth = computed({
-	get: () => resizedPreviewDockWidth.value ?? defaultPanelWidth.value,
-	set: (width: number) => {
-		resizedPreviewDockWidth.value = width;
-	},
-});
+const previewDockWidth = computed(() => resizedPreviewDockWidth.value ?? defaultPanelWidth.value);
 const isPreviewDockResizing = ref(false);
 const builderContainer = useTemplateRef<HTMLElement>('builderContainer');
 const { width: builderContainerWidth } = useElementSize(builderContainer, undefined, {
@@ -1252,7 +1247,8 @@ function closePreviewDock() {
 
 function onPreviewDockResize({ width }: ResizeData) {
 	preferredSidePanel.value = 'preview';
-	previewDockWidth.value = width;
+	// Double-click resets emit resize without an active drag.
+	resizedPreviewDockWidth.value = isPreviewDockResizing.value ? width : undefined;
 }
 
 function onPublished(updated: AgentResource) {
